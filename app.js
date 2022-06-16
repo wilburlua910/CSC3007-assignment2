@@ -15,11 +15,11 @@ const crimeData = d3.csv('crime.csv').then((data) => {
     let crimeSorted = []
     var dataObj = {};
     var index = 0;
-    for(var i = 0; i < data.length; i++) {
+    for (var i = 0; i < data.length; i++) {
         dataObj[data[i].level_2] = data[i].value
         dataObj['year'] = data[i].year
 
-        if ( index == 9) {
+        if (index == 9) {
             crimeSorted.push(dataObj);
             dataObj = {};
             index = 0;
@@ -27,6 +27,20 @@ const crimeData = d3.csv('crime.csv').then((data) => {
             index++;
         }
     }
+
+    var tooltip = d3.select("#my_dataviz")
+    .append("div")
+    .style("opacity", 0)
+    .attr("class", "tooltip")
+    .style("background-color", "white")
+    .style("border", "solid")
+    .style("border-width", "1px")
+    .style("border-radius", "5px")
+    .style("padding", "10px")
+
+  // Three function that change the tooltip when user hover / move / leave a cell
+
+
     console.log(crimeSorted)
     const crimeGroups = [
         "Murder",
@@ -61,27 +75,29 @@ const crimeData = d3.csv('crime.csv').then((data) => {
 
     //Y axis generate using D3 Scale
     let yScale = d3.scaleLinear()
-    .domain([0, 19000])
-    .range([height, 0]);
+        .domain([0, 19000])
+        .range([height, 0]);
+
+
 
     svg.append("g")
-        .attr("transform", "translate(" + margin.left + "," + 0+ ")")
+        .attr("transform", "translate(" + margin.left + "," + 0 + ")")
         .call(d3.axisLeft(yScale));
 
     svg.append("text")
-    .attr("transform", "translate(" + (width / 2) + "," + (height + 40) + ")")
-    .text("Years (2011 - 2020) ")
-    .attr("text-align", "middle");
-    
-    svg.append("g")
-    .attr("transform", "translate(" + margin.left + "," + height + ")")
-    .call(d3.axisBottom(xScale).tickSizeOuter(0));
+        .attr("transform", "translate(" + (width / 2) + "," + (height + 40) + ")")
+        .text("Years (2011 - 2020) ")
+        .attr("text-align", "middle");
 
     svg.append("g")
-    .append("text")
-    .attr("transform", "translate(10, " + (height / 2) + ") rotate(-90)")
-    .text("Total Number of Crime")
-    .attr("text-align", "middle")
+        .attr("transform", "translate(" + margin.left + "," + height + ")")
+        .call(d3.axisBottom(xScale).tickSizeOuter(0));
+
+    svg.append("g")
+        .append("text")
+        .attr("transform", "translate(10, " + (height / 2) + ") rotate(-90)")
+        .text("Total Number of Crime")
+        .attr("text-align", "middle")
 
 
     //Colour scale generate using D3 Scale
@@ -98,20 +114,49 @@ const crimeData = d3.csv('crime.csv').then((data) => {
             "#df676e",
             "#de425b"]);
 
+             
+        const mouseover = function(d) {
+            var subgroupName = d3.select(this.parentNode).datum().key;
+            var val = d3.select(this.parentNode).datum();
+            // var data = val[index].data[subgroupName]
+            // console.log(data)
+            // console.log(val)
+            tooltip
+                .html("Crime: " + subgroupName)
+                .style("opacity", 1)
+                .attr("transform", "translate(60" + ")")
+          }
+          const mousemove = function(d) {
+            tooltip
+              .style("left", (d3.mouse(this)[0]+100) + "px") // It is important to put the +90: other wise the tooltip is exactly where the point is an it creates a weird effect
+              .style("top", (d3.mouse(this)[1]) + "px")
+   
+          }
+          const mouseleave = function(d) {
+            
+            tooltip
+              .style("opacity", 0)
+          } 
+
+
     svg.append("g")
         .selectAll("g")
         .data(series)
         .enter().append("g")
-            .attr("fill", d => colorScale(d.key))
-            .selectAll("rect")
-            .data(d => {return d})
-            .enter().append("rect")
-                .attr("x", d => xScale(d.data.year))
-                .attr("y", d => yScale(d[1]))
-                .attr("height", d => yScale(d[0]) - yScale(d[1]))
-                .attr("width", xScale.bandwidth())
-                .attr("transform", "translate(60" + ")")
-
+        .attr("fill", d => colorScale(d.key))
+        .selectAll("rect")
+        .data(d => { return d })
+        .enter().append("rect")
+        .attr("x", d => xScale(d.data.year))
+        .attr("y", d => yScale(d[1]))
+        .attr("height", d => yScale(d[0]) - yScale(d[1]))
+        .attr("width", xScale.bandwidth())
+        .attr("transform", "translate(60" + ")")
+        .attr("stroke-width", 0.15)
+        .attr("stroke", "black")
+        .on("mouseover", mouseover)
+        .on("mousemove", mousemove)
+        .on("mouseleave", mouseleave)
 
     const legends = svg.append("g")
         .attr("height", 100)
@@ -128,6 +173,7 @@ const crimeData = d3.csv('crime.csv').then((data) => {
         .attr("height", 12)
         .attr("fill", d => colorScale(d))
 
+
     legends.selectAll("text")
         .data(crimeGroups)
         .enter()
@@ -137,7 +183,12 @@ const crimeData = d3.csv('crime.csv').then((data) => {
         .attr("y", (d, i) => i * 18)
         .attr('text-anchor', 'start')
         .attr('alignment-baseline', 'hanging');
+
+
 })
+
+
+
 
 
 
